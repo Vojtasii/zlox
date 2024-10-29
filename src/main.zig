@@ -15,7 +15,10 @@ pub fn main() !void {
     var chunk = Chunk.init(ally);
     defer chunk.deinit();
 
-    try chunk.addReturn();
+    const constant = try chunk.addConstant(1.2);
+    try chunk.writeConstant(constant);
+
+    try chunk.writeReturn();
 
     chunk.disassemble("test chunk");
 }
