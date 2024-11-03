@@ -16,9 +16,9 @@ pub fn main() !void {
     defer chunk.deinit();
 
     const constant = try chunk.addConstant(1.2);
-    try chunk.writeConstant(constant);
+    try chunk.writeConstant(constant, .{ .line = 100, .column = 12 });
 
-    try chunk.writeReturn();
+    try chunk.writeReturn(.{});
 
     chunk.disassemble("test chunk");
 }
