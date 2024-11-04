@@ -22,19 +22,27 @@ pub const Chunk = struct {
         self.positions.deinit();
     }
 
-    pub fn addConstant(self: *Chunk, value: Value) !u8 {
+    /// Adds a constant to the chunk and returns its index.
+    /// Maximal number of constants is 2^24.
+    pub fn addConstant(self: *Chunk, value: Value) !u24 {
         try self.constants.append(value);
         return @intCast(self.constants.items.len - 1);
     }
 
-    pub fn writeConstant(self: *Chunk, constant: u8, pos: Position) !void {
+    pub fn writeConstant(self: *Chunk, constant: u24, pos: Position) !void {
         const offset = self.code.items.len;
 
-        const slice = [_]u8{
+        const slice: []const u8 = if (constant < 256) &.{
             @intFromEnum(OpCode.Constant),
-            constant,
+            @intCast(constant),
+        } else &.{
+            @intFromEnum(OpCode.ConstantLong),
+            // Split the constant into 3 bytes.
+            @truncate(constant >> 16),
+            @truncate(constant >> 8),
+            @truncate(constant),
         };
-        try self.code.appendSlice(&slice);
+        try self.code.appendSlice(slice);
 
         try self.positions.put(offset, pos);
     }
@@ -72,13 +80,23 @@ pub const Chunk = struct {
                 std.debug.print("{s:>16} {d:>4} {d:>4}\n", .{ "Constant", constant, value });
                 return offset + 2;
             },
+            OpCode.ConstantLong => {
+                const constant: u24 =
+                    @as(u24, chunk.code.items[offset + 1]) << 16 |
+                    @as(u24, chunk.code.items[offset + 2]) << 8 |
+                    @as(u24, chunk.code.items[offset + 3]);
+                const value: Value = chunk.constants.items[constant];
+                std.debug.print("{s:>16} {d:>4} {d:>4}\n", .{ "ConstantLong", constant, value });
+                return offset + 4;
+            },
         };
     }
 };
 
 pub const OpCode = enum(u8) {
-    Constant,
     Return,
+    Constant,
+    ConstantLong,
 };
 
 /// Represents a position in the source code.
@@ -123,6 +141,6 @@ test "add constant" {
     var chunk = Chunk.init(std.testing.allocator);
     defer chunk.deinit();
     const value: Value = 1.2;
-    const index: u8 = try chunk.addConstant(value);
+    const index: u24 = try chunk.addConstant(value);
     try std.testing.expectEqual(chunk.constants.items[index], value);
 }
