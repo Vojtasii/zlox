@@ -37,16 +37,30 @@ pub const VM = struct {
                     const value: Value = vm.chunk.constants.items[constant];
                     std.debug.print("{d}\n", .{value});
                 },
+                .ConstantLong => {
+                    const bytes = readBytes(3);
+                    const constant: u24 =
+                        @as(u24, bytes[0]) << 16 |
+                        @as(u24, bytes[1]) << 8 |
+                        @as(u24, bytes[2]);
+                    const value: Value = vm.chunk.constants.items[constant];
+                    std.debug.print("{d}\n", .{value});
+                },
                 .Return => return InterpretResult.Ok,
-                else => return InterpretResult.RuntimeError,
             }
         }
     }
 
     fn readByte() u8 {
         const byte = vm.ip[0];
-        vm.ip = vm.ip + 1;
+        vm.ip += 1;
         return byte;
+    }
+
+    fn readBytes(n: comptime_int) [n]u8 {
+        const bytes = vm.ip[0..n].*;
+        vm.ip += n;
+        return bytes;
     }
 };
 
@@ -55,3 +69,18 @@ const InterpretResult = enum {
     CompileError,
     RuntimeError,
 };
+
+test "run ConstantLong" {
+    var chunk = Chunk.init(std.testing.allocator);
+    defer chunk.deinit();
+
+    var constant_long: u24 = 0;
+    while (constant_long < 256) {
+        constant_long = try chunk.addConstant(@floatFromInt(constant_long));
+    }
+    try chunk.writeConstant(constant_long, .{ .line = constant_long, .column = 1 });
+
+    try chunk.writeReturn(.{});
+
+    try std.testing.expectEqual(InterpretResult.Ok, VM.interpret(&chunk));
+}

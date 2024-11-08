@@ -22,15 +22,7 @@ pub fn main() !void {
     const constant = try chunk.addConstant(1.2);
     try chunk.writeConstant(constant, .{ .line = 99, .column = 12 });
 
-    // var constant_long: u24 = constant;
-    // while (constant_long < 256) {
-    //     constant_long = try chunk.addConstant(@floatFromInt(constant_long));
-    // }
-    // try chunk.writeConstant(constant_long, .{ .line = constant_long, .column = 1 });
-
     try chunk.writeReturn(.{});
-
-    // chunk.disassemble("test chunk");
 
     _ = VM.interpret(&chunk);
 }
