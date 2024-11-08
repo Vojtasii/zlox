@@ -65,7 +65,7 @@ pub const Chunk = struct {
         }
     }
 
-    fn dissasembleInstruction(chunk: *const Chunk, offset: usize) usize {
+    pub fn dissasembleInstruction(chunk: *const Chunk, offset: usize) usize {
         const opcode: OpCode = @enumFromInt(chunk.code.items[offset]);
         const pos = chunk.positions.get(offset) orelse Position{};
         std.debug.print("{d:0>4} {s:>3}", .{ offset, pos });
