@@ -8,10 +8,7 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer std.debug.assert(gpa.deinit() == .ok);
 
-    // We use a logging allocator to help us debug memory issues.
-    var la = std.heap.LoggingAllocator(.debug, .err).init(gpa.allocator());
-
-    const ally = la.allocator();
+    const ally = gpa.allocator();
 
     VM.init(ally);
     defer VM.deinit();

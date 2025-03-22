@@ -7,3 +7,4 @@ docgen_tmp/
 
 # IDE
 .idea
+Zig.iml
